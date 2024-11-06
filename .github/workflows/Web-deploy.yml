@@ -1,0 +1,38 @@
+name: Web Deployment
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'web/**'  # Triggers only when files in 'web/' directory change
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14.x'
+
+      - name: Install dependencies
+        run: |
+          cd web
+          npm ci
+
+      - name: Build web
+        run: |
+          cd web
+          npm run build
+
+      - name: Deploy web
+        uses: burnett01/rsync-deployments@5.1
+        with:
+          path: ./web/build/*                      
+          remote_path: /var/www/my-web-app/        
+          remote_host: ${{ secrets.WEB_SERVER_HOST }}
+          remote_user: ubuntu
+          remote_key: "${{ secrets.SSH_PRIVATE_KEY }}"
